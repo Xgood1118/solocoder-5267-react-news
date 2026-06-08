@@ -1,0 +1,17 @@
+5267-react-news R1 复盘：后端 FastAPI 完全无法启动，跑 uvicorn app.main:app 直接 ImportError 崩溃。
+
+具体问题：backend/app/api/ 下 7 个 API 文件（admin.py / articles.py / auth.py / comments.py / search.py / sources.py / users.py）头部所有相对导入都写成 from ...database / from ...models / from ...schemas / from ...core.security / from ...crawler.scheduler —— 多了 1 个点（3 个点而非 2 个）。文件实际路径是 backend/app/api/auth.py，从 app.api.auth 走 3 个点是 backend（顶层 package 之外），Python 抛 ImportError: attempted relative import beyond top-level package，uvicorn 启动到 from .api import api_router 这一步直接挂。core/security.py 用的是 from ..database（2 个点）是对的，crawler/ 下文件用的也是 .. —— 只有 api/ 目录这 7 个文件全错。
+
+期望 R2 修法：
+
+1. 把 backend/app/api/ 下 7 个文件（admin / articles / auth / comments / search / sources / users）头部所有 from ...X 改成 from ..X —— 一致改 2 个点。具体来说：auth.py 的 line 6/7/8/9/12 全部 ..database / ..models / ..schemas / ..core.security / ..config；其余 6 个文件同理（comments.py line 6/7/8/9，sources.py line 6/7/8/9，articles.py line 6/7/11/15，admin.py line 6/7/8/9/10，users.py line 6/7/11/16/22，search.py line 5/6/7/8/9）。验证：uvicorn app.main:app --port 8101 启动后 curl localhost:8101/health 应返回 {"status":"healthy"}，curl localhost:8101/docs 应返回 Swagger UI HTML。
+
+2. 启动后跑端到端冒烟：注册 testuser → 登录拿 JWT → POST /api/sources 创建一个 feed_type=rss 的源（先暂停定时爬，直接手动验证） → POST /api/admin/sources/crawl-all → 等几秒 → GET /api/articles 应能看到新文章入库 → GET /api/search?q=xxx 应能命中。任一步失败都要修。
+
+3. 注意用户硬规则：端口范围 8100-8199（别再撞 8100，那个端口已有别的项目占着）；React 列表 key={article.id} 不用 index；评论 path 物化路径；点赞幂等；feedparser 解析 RSS；timeout=10 重试 3 次 + 指数退避；随机 UA + 1-3s 延迟；SQLite FTS5 全文检索 + jieba；APScheduler 单实例 + redis_lock 分布式互斥（PROMPT 写的要求）。
+
+4. 提交 + 推送：R2 跑通冒烟后跑 node tmp/git-commit-round.js 5267-react-news 2 "<summary>" 拿 SHA，再跑 node tmp/solo-check-feishu.js 5267-react-news 2 "<R2 不满意原因>" "<业务领域>" "<SHA>" "https://github.com/Xgood1118/solocoder-5267-react-news" "SoloCoder/5267-react-news/PROMPT.txt" "SoloCoder/5267-react-news/NEXT_PROMPT_R2.txt" "<screenshot_token>" —— 注意必须用 per-project URL，绝不能 fallback 到 SoloCoder monorepo URL。
+
+5. 不要修的：不动 api/ 之外的文件（core/ 和 crawler/ 的相对导入是对的）；不动 vite.config.js 端口（前端 vite 默认 3000 即可）；不要新建项目目录（已经在 solocoder-5267-react-news 这个 repo 里）。
+
+只改这 7 个文件的相对导入点数，跑通后端启动和最小 E2E 冒烟即可交付 R2。
