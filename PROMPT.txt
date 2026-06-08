@@ -1,0 +1,41 @@
+需求：React + Python FastAPI 全栈新闻聚合系统，订阅源 / 抓取 / 全文检索 / 评论 / 点赞 / 反爬。
+
+背景：现在信息源太散，公众号、RSS、Twitter、行业网站都得分开看。我们想做一个聚合器：用户订阅感兴趣的源（RSS / 公众号 / 网站）、系统定时抓取、入库、聚合展示、评论点赞互动。学习目标：让组里同学完整过一遍爬虫 + 搜索 + 前端三件套。
+
+核心功能：
+- 订阅源管理：RSS / Atom / JSON Feed 链接、用户自定义抓取规则（CSS 选择器）
+- 定时抓取：每 30 分钟拉取订阅源（用 APScheduler + httpx）
+- 去重：基于 URL + 内容 hash，新文章入库不去重
+- 全文检索：Elasticsearch 或 MeiliSearch 索引（标题、摘要、作者、标签）
+- 分类 / 标签：用户可给文章打标，系统自动提取（NLP 关键词）
+- 评论：树形评论（最多 3 层）、@、点赞
+- 点赞 / 收藏：文章可点赞、收藏到自己的阅读列表
+- 阅读历史 / 稍后读：用户阅读过的、收藏的、稍后读的分开列表
+- 反爬：UA 伪装、随机延迟、失败重试、被封自动跳过
+- 推送：用户订阅的源有新文章 → 邮件 / 站内信
+
+涉及模块：
+- `backend/app/api/`：sources、articles、comments、users、search
+- `backend/app/crawler/`：RSS 解析、HTML 抽取、调度器
+- `backend/app/search/`：MeiliSearch 客户端、索引同步
+- `backend/app/notify/`：邮件、站内信、WebSocket 实时推送
+- `frontend/src/pages/`：Feed、Article、Search、Profile、Settings
+- `frontend/src/components/`：ArticleCard、CommentTree、SourceBadge
+- `frontend/src/hooks/`：useInfiniteScroll、useDebounce
+
+注意事项：
+- 反爬要"礼貌"：每次请求随机 User-Agent、间隔 1-3 秒、被封后冷却 1 小时，不要暴力抓
+- RSS 解析用 `feedparser`（Python），HTML 内容用 `readability-lxml` 提取正文
+- 抓取时设 `timeout=10`、重试 3 次、指数退避，避免挂起
+- 全文检索用 MeiliSearch（轻量），不要上 Elasticsearch（运维重）；MVP 用 SQLite FTS5 也行
+- 去重要用 SimHash 或 MinHash 处理转载文章，内容大致相同合并为一组
+- 树形评论用 `parent_id` 自引用 + `path` 字段（物化路径），查 3 层用 `WHERE path LIKE 'xxx%'`
+- 点赞要做幂等：用户只能点一次，再点取消，不能加 2
+- 阅读历史要异步写（不阻塞主请求），用 Redis 队列 or PostgreSQL `LISTEN/NOTIFY`
+- 反爬策略要可配置：管理员后台能调抓取频率、UA 列表、代理池
+- 抓失败的源单独标记，不影响其他源；管理员能看到失败率
+- 全文检索中文分词：MeiliSearch 自带，但 jieba 切分 + 索引可能更准
+- 邮件推送不要一篇文章一封，攒满 10 篇发"今日要闻"摘要
+- WebSocket 推送连接数要限制，10 万用户不能开 10 万连接（用 SSE 或长轮询降级）
+- React 列表渲染要 `key={article.id}`，不要用 index 否则分页错位
+- 抓取 cron 用 APScheduler 单实例，分布式部署要加 `redis_lock` 互斥
