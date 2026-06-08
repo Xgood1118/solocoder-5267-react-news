@@ -98,6 +98,9 @@ class Article(Base):
     tags = relationship("ArticleTag", back_populates="article", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="article", cascade="all, delete-orphan")
     likes = relationship("ArticleLike", back_populates="article", cascade="all, delete-orphan")
+    favorites = relationship("Favorite", back_populates="article", cascade="all, delete-orphan")
+    read_history = relationship("ReadHistory", back_populates="article", cascade="all, delete-orphan")
+    read_later = relationship("ReadLater", back_populates="article", cascade="all, delete-orphan")
 
 
 class ArticleTag(Base):
@@ -167,6 +170,7 @@ class Favorite(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="favorites")
+    article = relationship("Article", back_populates="favorites")
 
 
 class ReadHistory(Base):
@@ -183,6 +187,7 @@ class ReadHistory(Base):
     read_duration = Column(Integer, default=0)
 
     user = relationship("User", back_populates="read_history")
+    article = relationship("Article", back_populates="read_history")
 
 
 class ReadLater(Base):
@@ -195,6 +200,7 @@ class ReadLater(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="read_later")
+    article = relationship("Article", back_populates="read_later")
 
 
 class Notification(Base):
