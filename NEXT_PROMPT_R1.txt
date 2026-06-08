@@ -1,5 +1,2 @@
-后端跑不起来，`uvicorn app.main:app` 一启动就 ImportError 崩，Swagger 都打不开，整个项目没法验。前端 vite build 是过的，但 7 个 API 接口全挂。
-
-修好之后希望后端能起得来、`/health` 返回 200、Swagger 可见，至少能跑通注册→登录→创 RSS 源→手动触发抓取→拿到文章这个最小闭环。
-
+后端跑不起来，`uvicorn app.main:app` 一启动就 ImportError 崩，Swagger 都打不开，整个项目没法验。前端 vite build 能过，但 7 个 API 接口全挂。
 检查修复一下。
