@@ -3,23 +3,23 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from ...database import get_db
-from ...models import (
+from ..database import get_db
+from ..models import (
     User, Favorite, ReadLater, ReadHistory,
     Article, Source, Subscription, Notification
 )
-from ...schemas import (
+from ..schemas import (
     ArticleResponse, ArticleListResponse, ReadHistoryResponse,
     SubscriptionResponse, NotificationListResponse, NotificationResponse,
     SourceResponse
 )
-from ...core.security import get_current_user
+from ..core.security import get_current_user
 
 router = APIRouter(prefix="/user", tags=["user"])
 
 
 def _enrich_article_simple(article: Article, user: User, db: Session) -> dict:
-    from ...models import ArticleLike, Favorite, ReadLater, ArticleTag
+    from ..models import ArticleLike, Favorite, ReadLater, ArticleTag
 
     article_dict = ArticleResponse.model_validate(article).model_dump()
 

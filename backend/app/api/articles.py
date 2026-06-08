@@ -3,16 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status, Background
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 
-from ...database import get_db
-from ...models import (
+from ..database import get_db
+from ..models import (
     Article, Source, Subscription, ArticleLike, Favorite,
     ReadLater, ReadHistory, ArticleTag, User
 )
-from ...schemas import (
+from ..schemas import (
     ArticleResponse, ArticleListResponse, LikeActionResponse,
     FavoriteActionResponse, ReadLaterActionResponse, ArticleTagResponse
 )
-from ...core.security import get_current_user
+from ..core.security import get_current_user
 
 router = APIRouter(prefix="/articles", tags=["articles"])
 

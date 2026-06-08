@@ -2,11 +2,11 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from ...database import get_db
-from ...models import Article, Source, ArticleTag, User
-from ...schemas import SearchResponse, SearchResultArticle
-from ...core.security import get_current_user
-from ...search import search_articles
+from ..database import get_db
+from ..models import Article, Source, ArticleTag, User
+from ..schemas import SearchResponse, SearchResultArticle
+from ..core.security import get_current_user
+from ..search import search_articles
 
 router = APIRouter(prefix="/search", tags=["search"])
 

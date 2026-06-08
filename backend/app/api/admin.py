@@ -3,11 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 
-from ...database import get_db
-from ...models import Source, CrawlLog, User, Article
-from ...schemas import SourceResponse, CrawlLogResponse, UserResponse
-from ...core.security import get_current_admin_user
-from ...crawler.scheduler import crawl_source, crawl_all_sources
+from ..database import get_db
+from ..models import Source, CrawlLog, User, Article
+from ..schemas import SourceResponse, CrawlLogResponse, UserResponse
+from ..core.security import get_current_admin_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -66,6 +65,8 @@ def admin_crawl_source(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
+    from ..crawler.scheduler import crawl_source
+
     source = db.query(Source).filter(Source.id == source_id).first()
     if not source:
         raise HTTPException(status_code=404, detail="Source not found")
@@ -79,7 +80,9 @@ def admin_crawl_all(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
+    from ..crawler.scheduler import crawl_all_sources
     from threading import Thread
+
     thread = Thread(target=crawl_all_sources)
     thread.start()
     return {"message": "Crawl started in background"}

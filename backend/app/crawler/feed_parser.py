@@ -110,14 +110,18 @@ def extract_keywords(text: str, top_k: int = 5) -> List[str]:
         keywords = jieba.analyse.extract_tags(text, topK=top_k)
         return keywords
     except Exception:
-        words = jieba.lcut(text)
-        word_count = {}
-        for word in words:
-            if len(word) >= 2:
-                word_count[word] = word_count.get(word, 0) + 1
+        try:
+            import jieba
+            words = jieba.lcut(text)
+            word_count = {}
+            for word in words:
+                if len(word) >= 2:
+                    word_count[word] = word_count.get(word, 0) + 1
 
-        sorted_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
-        return [word for word, _ in sorted_words[:top_k]]
+            sorted_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
+            return [word for word, _ in sorted_words[:top_k]]
+        except Exception:
+            return []
 
 
 def check_content_similarity(simhash1: str, simhash2: str, threshold: int = 3) -> bool:

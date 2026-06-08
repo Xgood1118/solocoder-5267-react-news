@@ -1,12 +1,22 @@
 from typing import List, Tuple, Optional
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-import jieba
 
 from ..schemas import SearchResultArticle
 
+_jieba = None
+
+
+def _get_jieba():
+    global _jieba
+    if _jieba is None:
+        import jieba
+        _jieba = jieba
+    return _jieba
+
 
 def _tokenize_chinese(text: str) -> str:
+    jieba = _get_jieba()
     words = jieba.cut_for_search(text)
     return " ".join(words)
 

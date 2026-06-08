@@ -22,12 +22,23 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
-    from .crawler.scheduler import start_scheduler, stop_scheduler
-    start_scheduler()
+    try:
+        from .crawler.scheduler import start_scheduler, stop_scheduler
+        start_scheduler()
 
-    yield
+        yield
 
-    stop_scheduler()
+        stop_scheduler()
+    except ImportError as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Crawler module not available: {e}. Starting without scheduled crawls.")
+        yield
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to start scheduler: {e}. Starting without scheduled crawls.")
+        yield
 
 
 app = FastAPI(
